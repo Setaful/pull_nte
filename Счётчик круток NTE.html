@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Счётчик круток NTE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12101f;--card:#1d1a33;--card2:#272344;--tx:#f1eefc;--mut:#9a95bd;--ln:#352f5c;--g5:#ffb23e;--g4:#c77dff;--ac:#33e1c9;--bad:#ff6b8b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f3f1fb;--card:#fff;--card2:#ebe8f8;--tx:#1b1736;--mut:#6a6490;--ln:#d9d4ee;--g5:#d98100;--g4:#8e3bd1;--ac:#0a9d8b;--bad:#d63a5f}}
+:root[data-theme="light"]{--bg:#f3f1fb;--card:#fff;--card2:#ebe8f8;--tx:#1b1736;--mut:#6a6490;--ln:#d9d4ee;--g5:#d98100;--g4:#8e3bd1;--ac:#0a9d8b;--bad:#d63a5f}
+:root[data-theme="dark"]{--bg:#12101f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Manrope,system-ui,sans-serif}
+h1,h2{font-family:Unbounded,system-ui,sans-serif;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+h1{font-size:clamp(22px,4vw,34px);font-weight:800;letter-spacing:-.02em}
+button,select,input{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--ln);border-radius:10px;padding:8px 12px}
+button{cursor:pointer;font-weight:600}
+button:hover{border-color:var(--ac)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button.pri{background:var(--ac);color:#06201c;border-color:var(--ac)}
+.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:16px}.tabs button{text-align:left;padding:12px 14px;border-radius:14px;background:var(--card);line-height:1.6}
+.tabs button.on{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:16px}
+.card h2{font-size:15px;margin-bottom:12px}
+.big{font-family:Unbounded,sans-serif;font-size:40px;font-weight:800;line-height:1}
+.mut{color:var(--mut);font-size:13px}
+.g5{color:var(--g5)}.g4{color:var(--g4)}
+.bar{height:8px;border-radius:6px;background:var(--card2);margin:10px 0 4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--g5)}
+.bar.b4 i{background:var(--g4)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--ln)}
+.row:last-child{border:0}
+.form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.form input[type=text]{flex:1 1 160px;min-width:0}
+.form input[type=number]{width:80px}
+textarea{width:100%;min-height:90px;background:var(--card2);color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
+.wide{margin-top:14px}
+details summary{cursor:pointer;font-weight:700;font-family:Unbounded,sans-serif;font-size:15px}
+details ul{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:13px}
+.hist{max-height:420px;overflow:auto}
+.hist .row{align-items:center}
+.hist .gap{font-family:Unbounded,sans-serif;font-size:13px;min-width:38px;text-align:right}
+.pill{font-size:12px;border:1px solid var(--ln);border-radius:20px;padding:1px 8px;margin-left:6px;color:var(--mut)}
+.pill.win{color:var(--ac);border-color:var(--ac)}.pill.lose{color:var(--bad);border-color:var(--bad)}
+.x{padding:2px 8px;border-radius:8px}
+.chart{overflow-x:auto}
+dialog{background:var(--card);color:var(--tx);border:1px solid var(--ln);border-radius:16px;max-width:520px;width:92%}
+dialog::backdrop{background:#0008}
+label{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Счётчик круток NTE</h1>
+  <div class="form">
+    <button id="bImp" class="pri">Импорт из игры</button>
+    <button id="bSet">Настройки</button>
+  </div>
+</header>
+<div class="tabs" id="tabs"></div>
+<div id="app"></div>
+</div>
+
+<dialog id="dSet"><h2>Настройки</h2>
+  <p class="mut">Гарант и цена крутки зависят от баннера: проверьте значения в игре.</p>
+  <div id="setBody"></div>
+  <div class="form" style="margin-top:12px"><button class="pri" id="sSave">Сохранить</button><button id="sClose">Закрыть</button></div>
+</dialog>
+
+<dialog id="dIO"><h2>Импорт и экспорт</h2>
+  <p class="mut"><b>Из игры:</b> получите JSON-файлы утилитой <a href="https://github.com/Golumpa/nte-exporter" target="_blank" rel="noopener" style="color:var(--ac)">nte-exporter</a> (по одному файлу на баннер) и выберите их ниже. Файлы читаются только в вашем браузере, повторный импорт не создаёт дублей.</p>
+  <div class="form" style="margin-bottom:10px"><input type="file" id="ioFile" accept=".json,application/json" multiple></div>
+  <p id="ioMsg" class="mut" aria-live="polite">Файл можно также перетащить в это окно.</p>
+  <p class="mut"><b>Вручную:</b> вставьте JSON-экспорт этого сайта, JSON от nte-exporter или строки <b>Имя, 5, 2026-09-22, 1</b> (редкость 3–5; последнее поле 1 = выигран 50/50) для текущего баннера.</p>
+  <textarea id="ioText"></textarea>
+  <div class="form" style="margin-top:10px"><button id="ioExp">Показать экспорт</button><button class="pri" id="ioImp">Импортировать</button><button id="ioClose">Закрыть</button></div>
+</dialog>
+
+<script>
+const DEF={
+ char:{name:'Эксклюзивная доска',board:true,hard5:90,hard4:10,cost:160,entries:[]},
+ arc:{name:'Дуги (Arc)',hard5:80,hard4:10,cost:160,entries:[]},
+ std:{name:'Стандартный баннер',hard5:90,hard4:10,cost:160,entries:[]},
+ mys:{name:'Mystery Box',hard5:90,hard4:10,cost:160,entries:[]}
+};
+let S,cur='char',filt=5;
+try{S=JSON.parse(localStorage.getItem('nte-pulls')||'null')}catch(e){}
+if(!S)S=JSON.parse(JSON.stringify(DEF));
+function fixS(){for(const k in DEF){if(!S[k])S[k]=JSON.parse(JSON.stringify(DEF[k]));S[k].name=DEF[k].name;S[k].feat=DEF[k].feat;S[k].board=DEF[k].board}}
+fixS();
+const save=()=>{try{localStorage.setItem('nte-pulls',JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toISOString().slice(0,16).replace('T',' ');
+
+function calc(b){
+  let thr=0,gifts=0,lost=false,unk=false,c5=0,c4=0,n5=0,n4=0,w5=0,l5=0,sum5=0,sum4=0,items=[];
+  b.entries.forEach((e,i)=>{
+    const th=e.th===0?0:1;c5+=th;c4+=th;thr+=th;if(e.rt==='points_gift')gifts++;
+    if(e.r===5){n5++;sum5+=c5;lost=e.f===false;unk=e.f!==true&&e.f!==false;e.f===true?w5++:e.f===false?l5++:0;items.push({...e,i,gap:c5});c5=0;c4=0}
+    else if(e.r===4){n4++;sum4+=c4;items.push({...e,i,gap:c4});c4=0}
+  });
+  return{lost,unk,c5,c4,gifts,n5,n4,w5,l5,total:thr,avg5:n5?sum5/n5:0,avg4:n4?sum4/n4:0,items};
+}
+function pityInfo(b,c){
+  const l5=Math.max(0,b.hard5-c.c5),l4=Math.max(0,b.hard4-c.c4);
+  if(b.board)return{l5,l4,fn:l5,short:'',ft:`Гарант персонажа: если до 89-го броска не выпал текущий эксклюзивный S-персонаж, 90-й даёт его сразу, 50/50 нет (осталось <b>${l5}</b>)`};
+  if(!b.feat)return{l5,l4,fn:null,short:'',ft:'На этом баннере нет 50/50: гарант только по числу круток'};
+  const fn=c.lost?l5:l5+b.hard5;
+  const ft=c.lost?`Гарант ${b.feat} активен: следующая 5★ точно событийная (до неё максимум ${l5})`:`Гарант ${b.feat}: максимум через <b>${fn}</b> круток${c.unk&&c.n5?' (результат прошлой 5★ не отмечен)':''}`;
+  return{l5,l4,fn,ft,short:c.lost?'активен, следующая 5★':'макс. '+fn+' круток'};
+}
+function tabs(){
+  $('tabs').innerHTML=Object.keys(S).map(k=>{const b=S[k],c=calc(b),p=pityInfo(b,c);return `<button data-k="${k}" class="${k===cur?'on':''}"><b>${esc(b.name)}</b><br><span class="mut">${b.board?'Бросков':'Круток'}: ${c.total}</span><br><span class="g5">До гаранта баннера: ${p.l5}</span> <span class="mut">(${c.c5}/${b.hard5})</span><br><span class="g4">${b.board?'Подарков получено: '+c.gifts:'До гаранта 4★: '+p.l4}</span>${b.feat?`<br><span class="mut">Гарант ${b.feat}: ${p.short}</span>`:''}${b.board?`<br><span class="mut">Гарант персонажа: ${p.l5} · доска ${c.c5>=70?'модифицирована':'базовая (ещё '+(70-c.c5)+')'}</span>`:''}</button>`}).join('');
+  $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{cur=b.dataset.k;render()});
+}
+function chart(items,hard){
+  const l=items.filter(x=>x.r===5);
+  if(!l.length)return '<p class="mut">Пока нет 5★: график появится после первой записи.</p>';
+  const w=Math.max(320,l.length*46),h=180,bw=30;
+  let s=`<svg width="${w}" height="${h+26}" role="img" aria-label="Крутки до каждой 5★">`;
+  s+=`<line x1="0" x2="${w}" y1="${h-h*(hard/hard)}" y2="${h-h*(hard/hard)}" stroke="var(--ln)" stroke-dasharray="4"/>`;
+  l.forEach((x,k)=>{const bh=Math.max(4,h*x.gap/hard),px=k*46+8;
+    s+=`<rect x="${px}" y="${h-bh}" width="${bw}" height="${bh}" rx="5" fill="${x.f===true?'var(--ac)':x.f===false?'var(--bad)':'var(--g5)'}"/>`;
+    s+=`<text x="${px+bw/2}" y="${h-bh-5}" text-anchor="middle" font-size="11" fill="var(--tx)">${x.gap}</text>`;
+    s+=`<text x="${px+bw/2}" y="${h+16}" text-anchor="middle" font-size="9" fill="var(--mut)">${esc(x.n.slice(0,6))}</text>`});
+  return `<div class="chart">${s}</svg></div><p class="mut">${items.some(x=>x.r===5&&x.f!=null)?'Зелёный: выигран 50/50, красный: проигран. ':''}Пунктир: гарант (${hard}).</p>`;
+}
+function render(){
+  tabs();
+  const b=S[cur],c=calc(b),p=pityInfo(b,c);
+  const pct=(a,t)=>t?(a/t*100).toFixed(2)+'%':'—';
+  const hist=c.items.filter(x=>filt===0||x.r===filt).slice().reverse();
+  $('app').innerHTML=`
+  <div class="grid">
+    <div class="card"><h2>${b.board?'Всего бросков':'Всего круток'}</h2><div class="big">${c.total}</div>
+      <div class="mut" style="margin-top:8px">Потрачено: ${(c.total*b.cost).toLocaleString('ru')} (по ${b.cost})</div></div>
+    <div class="card"><h2>До 5★ гарант</h2><div class="big g5">${c.c5}<span class="mut" style="font-size:16px"> / ${b.hard5}</span></div>
+      <div class="bar"><i style="width:${Math.min(100,c.c5/b.hard5*100)}%"></i></div>
+      <div class="mut">${b.board?'До гаранта баннера и персонажа':'До гаранта баннера'}: <b>${p.l5}</b> ${b.board?'бросков':'круток'}</div><div class="mut" style="margin-top:4px">${p.ft}</div></div>
+    <div class="card"><h2>${b.board?'Подарки за очки':'До 4★ гарант'}</h2><div class="big g4">${b.board?c.gifts:c.c4}<span class="mut" style="font-size:16px">${b.board?' получено':' / '+b.hard4}</span></div>
+      ${b.board?'':`<div class="bar b4"><i style="width:${Math.min(100,c.c4/b.hard4*100)}%"></i></div>`}
+      <div class="mut">${b.board?'Подарки приходят отдельными записями чаще, чем каждые 10 бросков, поэтому обратный отсчёт не показываю':`До гаранта 4★: <b>${p.l4}</b> круток`}</div></div>
+  </div>
+  <div class="grid wide">
+    <div class="card"><h2>Статистика</h2>
+      <div class="row"><span class="g5">5★ всего</span><b>${c.n5} · ${pct(c.n5,c.total)}</b></div>
+      <div class="row"><span>Среднее до 5★</span><b>${c.n5?c.avg5.toFixed(1):'—'}</b></div>
+      ${b.board?'':`<div class="row"><span>Выиграно 50/50</span><b>${c.w5} из ${c.w5+c.l5} · ${pct(c.w5,c.w5+c.l5)}</b></div>`}
+      <div class="row"><span class="g4">4★ всего</span><b>${c.n4} · ${pct(c.n4,c.total)}</b></div>
+      <div class="row"><span>Среднее до 4★</span><b>${c.n4?c.avg4.toFixed(1):'—'}</b></div></div>
+    <div class="card"><h2>Добавить крутки</h2>
+      <div class="form" style="margin-bottom:10px">
+        <input type="number" id="nN" min="1" max="500" value="10" aria-label="Количество">
+        <button id="add3">+ обычные (3★)</button>
+      </div>
+      <div class="form">
+        <input type="text" id="nName" placeholder="Имя 4★ или 5★">
+        <select id="nR"><option value="5">5★</option><option value="4">4★</option></select>
+        ${b.board?'':`<label style="margin:0;gap:6px"><input type="checkbox" id="nF"> выигран 50/50</label>`}
+        <button class="pri" id="addR">Добавить</button>
+      </div>
+      <div class="form" style="margin-top:10px"><button id="undo">Отменить последнюю</button></div>
+      <p class="mut">Добавляйте по порядку, как выпадало: сначала обычные, затем редкая награда.</p></div>
+  </div>
+  ${b.board?boardCards(b,c):''}
+  <div class="card wide"><h2>${b.board?'Броски до каждого S-персонажа':'Крутки до каждой 5★'}</h2>${chart(c.items,b.hard5)}</div>
+  <div class="card wide"><h2>История</h2>
+    <div class="form" style="margin-bottom:8px">
+      ${[5,4,0].map(r=>`<button data-f="${r}" class="${filt===r?'on':''}" style="${filt===r?'background:var(--tx);color:var(--bg)':''}">${r?r+'★':'Все 4–5★'}</button>`).join('')}
+    </div>
+    <div class="hist">${hist.length?hist.map(x=>`<div class="row"><span class="${x.r===5?'g5':'g4'}"><b>${esc(x.n)}</b>${x.r===5&&!b.board?`<button class="pill ${x.f===true?'win':x.f===false?'lose':''}" data-f50="${x.i}" title="Нажмите, чтобы отметить результат 50/50">${x.f===true?'50/50 выигран':x.f===false?'50/50 проигран':'50/50 ?'}</button>`:''}<br><span class="mut">${esc(x.d)}</span></span><span style="display:flex;gap:8px;align-items:center"><span class="gap">${x.gap}</span><button class="x" data-del="${x.i}" aria-label="Удалить">✕</button></span></div>`).join(''):'<p class="mut">Записей пока нет. Добавьте первую награду выше.</p>'}</div></div>`;
+  $('add3').onclick=()=>{const n=Math.max(1,Math.min(500,+$('nN').value||1));for(let i=0;i<n;i++)b.entries.push({r:3,n:'3★',d:today()});save();render()};
+  $('addR').onclick=()=>{const nm=$('nName').value.trim();if(!nm){$('nName').focus();return}b.entries.push({r:+$('nR').value,n:nm,d:today(),f:b.board?null:$('nF').checked});save();render()};
+  $('undo').onclick=()=>{b.entries.pop();save();render()};
+  $('app').querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{filt=+x.dataset.f;render()});
+  $('app').querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{b.entries.splice(+x.dataset.del,1);save();render()});
+  $('app').querySelectorAll('[data-f50]').forEach(x=>x.onclick=()=>{const e=b.entries[+x.dataset.f50];e.f=e.f===true?false:e.f===false?null:true;save();render()});
+}
+$('bSet').onclick=()=>{
+  $('setBody').innerHTML=Object.keys(S).map(k=>`<h3 style="margin:14px 0 4px;font-size:14px">${esc(S[k].name)}</h3>
+  <label>Гарант 5★<input type="number" data-k="${k}" data-p="hard5" value="${S[k].hard5}"></label>
+  <label>Гарант 4★<input type="number" data-k="${k}" data-p="hard4" value="${S[k].hard4}"></label>
+  <label>Цена крутки<input type="number" data-k="${k}" data-p="cost" value="${S[k].cost}"></label>`).join('');
+  $('dSet').showModal();
+};
+$('sSave').onclick=()=>{$('setBody').querySelectorAll('input').forEach(i=>{const v=+i.value;if(v>0)S[i.dataset.k][i.dataset.p]=v});save();$('dSet').close();render()};
+$('sClose').onclick=()=>$('dSet').close();
+$('bImp').onclick=()=>{$('ioText').value='';$('dIO').showModal()};
+$('ioClose').onclick=()=>$('dIO').close();
+const POOL={Lottery_LimitedCharacter:'char',Arc_MiracleBox:'arc',Lottery_Permanent:'std',Gashapon_MysteryBox:'mys'};
+const RANK={S:5,A:4,B:3};
+function importExport(j){
+  const bid=String((j.banner&&j.banner.id)||'').toLowerCase();
+  const k=POOL[j.banner&&j.banner.id]||(/limited/.test(bid)?'char':/arc/.test(bid)?'arc':/perm/.test(bid)?'std':/mystery|gashapon/.test(bid)?'mys':null);
+  if(!k)return 'Неизвестный баннер: '+(j.banner&&j.banner.id);
+  const b=S[k];b.entries=b.entries.filter(e=>!e.u||e.k);const have=new Map(b.entries.filter(e=>e.k).map(e=>[e.k,e])),seen={};let add=0;
+  (j.records||[]).forEach(r=>{
+    const kb=[r.uid,r.timestamp_group_ordinal,r.result_type||'',r.reward_id].join('|');seen[kb]=(seen[kb]||0)+1;const key=kb+'#'+seen[kb];if(have.has(key))return;const ty=r.reward_type;
+    b.entries.push({r:(!ty||ty==='character'||ty==='arc')?rankOf(r.reward_rank):3,n:r.reward_name||r.reward_id||'?',d:r.timestamp,o:r.timestamp_group_ordinal||0,u:r.uid,k:key,t:ty,rt:r.result_type||'',th:(r.result_type&&r.result_type!=='dice')?0:1,f:null});
+    have.set(key,1);add++;
+  });
+  b.entries.sort((a,c)=>a.d<c.d?-1:a.d>c.d?1:(c.o||0)-(a.o||0));
+  cur=k;
+  return b.name+': добавлено '+add;
+}
+$('ioFile').onchange=async e=>{
+  const out=[];
+  for(const f of e.target.files){
+    try{const j=JSON.parse(await f.text());out.push(j.format==='nte-history-export'?importExport(j):f.name+': это не файл nte-exporter')}
+    catch(x){out.push(f.name+': не удалось прочитать')}
+  }
+  save();render();$('ioMsg').textContent=out.join('; ');e.target.value='';
+};
+$('ioExp').onclick=()=>{$('ioText').value=JSON.stringify(S)};
+$('ioImp').onclick=()=>{
+  const t=$('ioText').value.trim();if(!t)return;
+  try{const j=JSON.parse(t);
+    if(j.format==='nte-history-export'){$('ioMsg').textContent=importExport(j);save();render();return}
+    if(j.char&&j.arc&&j.std){S=j;for(const k in DEF)if(!S[k])S[k]=JSON.parse(JSON.stringify(DEF[k]));save();$('dIO').close();render();return}}catch(e){}
+  const b=S[cur];
+  t.split('\n').forEach(l=>{const p=l.split(/[,;\t]/).map(s=>s.trim());if(!p[0])return;
+    const r=Math.min(5,Math.max(3,+p[1]||3));b.entries.push({r,n:p[0],d:p[2]||today(),f:p[3]==='1'})});
+  save();$('dIO').close();render();
+};
+function rankOf(v){const s=String(v).toUpperCase();return RANK[s]||(+s>=3&&+s<=5?+s:3)}
+const msg=t=>{$('ioMsg').textContent=t};
+function importText(t){
+  t=String(t).replace(/^\uFEFF/,'').trim();
+  if(!t)return 'Пусто: нечего импортировать';
+  if(t[0]==='{'||t[0]==='['){
+    let j;try{j=JSON.parse(t)}catch(e){return 'Ошибка JSON: '+e.message}
+    const out=[];
+    (Array.isArray(j)?j:[j]).forEach(x=>{
+      if(x&&x.char&&x.arc&&x.std){S=x;fixS();out.push('Данные сайта загружены')}
+      else if(x&&Array.isArray(x.records))out.push(importExport(x));
+      else out.push('Неизвестный формат файла');
+    });
+    return out.join('; ');
+  }
+  const b=S[cur];let n=0;
+  t.split('\n').forEach(l=>{const p=l.split(/[,;\t]/).map(s=>s.trim());if(!p[0])return;const r=Math.min(5,Math.max(3,+p[1]||3));b.entries.push({r,n:p[0],d:p[2]||today(),f:p[3]==='1'});n++});
+  return b.name+': добавлено строк '+n;
+}
+async function readFiles(files){
+  const out=[];
+  for(const f of files){try{out.push(f.name+' → '+importText(await f.text()))}catch(x){out.push(f.name+': не удалось прочитать')}}
+  save();render();msg(out.join('; '));
+}
+$('ioImp').onclick=()=>{const m=importText($('ioText').value);msg(m);save();render();if(!/^(Ошибка|Пусто)/.test(m))$('ioText').value=''};
+$('ioFile').onchange=async e=>{await readFiles(e.target.files);e.target.value=''};
+$('dIO').addEventListener('dragover',e=>e.preventDefault());
+$('dIO').addEventListener('drop',e=>{e.preventDefault();readFiles(e.dataTransfer.files)});
+$('ioText').addEventListener('paste',e=>{const fl=e.clipboardData&&e.clipboardData.files;if(fl&&fl.length){e.preventDefault();readFiles(fl)}});
+function boardInfo(b){
+  const cnt={};let sh=0,wf=0,arcA=0,arcB=0;
+  b.entries.forEach(e=>{
+    if(e.t==='arc'){if(e.r===4){arcA++;wf+=4}else if(e.r===3)arcB++;return}
+    if(e.r<4||(e.t&&e.t!=='character'))return;
+    const n=cnt[e.n]=(cnt[e.n]||0)+1;
+    if(n>=2){const s=e.r===5;if(n<=7){sh++;wf+=s?40:6}else wf+=s?80:12}
+  });
+  return{cnt,sh,wf,arcA,arcB,lost:arcB*20};
+}
+function boardCards(b,c){
+  const bi=boardInfo(b),mod=c.c5>=70,n=Math.max(0,c.total-(b.boardStart||0));
+  const bar=(t,cap)=>{const v=Math.min(n,cap);return `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>${t}</span><b>${v} / ${cap}</b></div><div class="bar"><i style="width:${v/cap*100}%;background:var(--ac)"></i></div></div>`};
+  const dup=Object.entries(bi.cnt).filter(x=>x[1]>1).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>`${esc(x[0])} ×${x[1]}`).join(', ');
+  return `<div class="grid wide">
+  <div class="card"><h2>Состояние доски</h2><div class="big ${mod?'g5':''}" style="font-size:24px">${mod?'Модифицированная':'Базовая'}</div>
+    <p class="mut">Шанс S-персонажа за бросок: <b>${mod?'19,59%':'0,99%'}</b> (с гарантией в среднем 1,87%). ${mod?'После получения S-персонажа доска станет базовой.':`Станет модифицированной, если на 70 бросков не выпадет S-персонаж: осталось <b>${70-c.c5}</b>.`}</p>
+    <p class="mut">До гарантированного S-персонажа: <b>${Math.max(0,b.hard5-c.c5)}</b> (гарант и подарки за очки общие для всех эксклюзивных досок).</p></div>
+  <div class="card"><h2>Бонусы обликов</h2>${bar('Облик планера (Центр моды)',50)}${bar('Окраска транспорта',120)}${bar('Ежедневный костюм',200)}
+    <div class="form" style="margin-top:8px"><button id="newBoard">Новая доска</button></div>
+    <p class="mut">Считается с начала текущей доски (${n} бросков). Когда начнётся новая доска, нажмите «Новая доска»: прогресс обнулится, гарант и подарки останутся.</p></div>
+  <div class="card"><h2>Дубликаты и фрагменты</h2>
+    <div class="row"><span>Фрагменты искривления</span><b>${bi.wf}</b></div>
+    <div class="row"><span>Осколки разума</span><b>${bi.sh}</b></div>
+    <div class="row"><span>Дуги A / B</span><b>${bi.arcA} / ${bi.arcB}</b></div>
+    <div class="row"><span>Потерянные фрагменты (дуги B)</span><b>${bi.lost}</b></div>
+    <p class="mut">${dup?'Повторы: '+dup:'Повторов пока нет.'} Считаются только импортированные записи с типом награды.</p></div></div>
+  <details class="card wide"><summary>Шансы и правила доски</summary><ul>
+    <li>S-персонаж: 0,99% (базовая доска), 19,59% (модифицированная), 1,87% с учётом гарантии; 90-й бросок гарантирован, 50/50 нет.</li>
+    <li>Подарок за очки: каждые 10 бросков, из него персонаж A 20%, дуга A 80%. Шанс A за бросок 22,98% (персонаж 11,67%, дуга 11,31%).</li>
+    <li>Дуга B: 65,33%. Сундук ученика 45,93% (S 0,2%, дуга B 99,8%). Сундук героя 20,07% (S 3%, дуга B 97%, плюс 2 фрагмента).</li>
+    <li>Путешествие вместе 10,86% (S 1,19%, A 9,67%). Перебросить 1,57% (+1 кубик). Множество сюрпризов 0,38% (+5 кубиков).</li>
+    <li>Коробка потерянного фрагмента 15,47%. Таинственная коробка сияющей дуги 3,31% (дуга A). Страна сна 3,15% (30 фрагментов).</li>
+    <li>Облики: Ежедневный костюм 0,33% (200 бросков), Время модификации 0,33% (120), Центр моды 1,71% (50).</li>
+    <li>Дубликаты S: со 2-го по 7-й 1 осколок и 40 фрагментов, с 8-го 80 фрагментов. Дубликаты A: 1 осколок и 6 фрагментов, с 8-го 12. Дуга A: +4 фрагмента, дуга B: +20 потерянных фрагментов.</li></ul></details>`;
+}
+$('app').addEventListener('click',e=>{if(e.target.id==='newBoard'){const b=S[cur];b.boardStart=calc(b).total;save();render()}});
+render();
+</script>
+</body>
+</html>
